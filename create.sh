@@ -1,21 +1,22 @@
 #!/bin/sh
 
-#parameters: machine name (required), CPU (number of cores), RAM (memory size in MB), HDD Disk size (in GB), ISO (Location of ISO image, optional), DATASTORE (Name of datastore name)
-#default params: CPU: 2, RAM: 4096, DISKSIZE: 20GB, ISO: 'predefined iso', DATASTORE: datastore
+#parameters: machine name (required), CPU (number of cores), RAM (memory size in MB), HDD Disk size (in GB), ISO (Location of ISO image, optional), DATASTORE (Name of datastore name), NETWORK (Name of Network)
+#default params: CPU: 2, RAM: 4096, DISKSIZE: 20GB, ISO: 'predefined iso', DATASTORE: datastore, NETWORK: VM Network
 
 phelp() {
 	echo "Script for automatic Virtual Machine creation for ESX"
-	echo "Usage: ./create.sh options: n <|c|i|r|s|d>"
-	echo "Where n: Name of VM (required), c: Number of virtual CPUs, i: location of an ISO image, r: RAM size in MB, s: Disk size in GB, d: Datatore Name"
-	echo "Default values are: CPU: 2, RAM: 1024MB, HDD-SIZE: 10GB, DATASTORE: datastore"
+	echo "Usage: ./create.sh options: n <|c|i|r|s|d|e>"
+	echo "Where n: Name of VM (required), c: Number of virtual CPUs, i: location of an ISO image, r: RAM size in MB, s: Disk size in GB, d: Datatore Name, e: Network Name"
+	echo "Default values are: CPU: 2, RAM: 1024MB, HDD-SIZE: 10GB, DATASTORE: datastore, NETWORK: VM Network"
 }
 
 #Setting up some of the default variables
 CPU=2
 RAM=1024
 SIZE=10
-ISO="/vmfs/volumes/datastore3/.iso/ubuntu-18.04-netboot-amd64-unattended.iso"
+ISO="ubuntu-18.04-netboot-amd64-unattended.iso"
 DATASTORE=datastore
+NETWORK="VM Network"
 FLAG=true
 ERR=false
 
@@ -25,7 +26,7 @@ ERR=false
 #You need to assign more than 1 MB of ram, and of course RAM has to be an integer as well
 #The HDD-size has to be an integer and has to be greater than 0.
 #If the ISO parameter is added, we are checking for an actual .iso extension
-while getopts n:c:i:r:s:d: option
+while getopts n:c:i:r:s:d:e: option
 do
         case $option in
                 n)
@@ -82,6 +83,9 @@ do
                 d)
 					DATASTORE=${OPTARG};
 					;;
+                e)
+					NETWORK=${OPTARG};
+					;;
 				\?) echo "Unknown option: -$OPTARG" >&2; phelp; exit 1;;
         		:) echo "Missing option argument for -$OPTARG" >&2; phelp; exit 1;;
         		*) echo "Unimplimented option: -$OPTARG" >&2; phelp; exit 1;;
@@ -98,8 +102,8 @@ if $ERR; then
 	exit 1
 fi
 
-if [ -d "$NAME" ]; then
-	echo "Directory - ${NAME} already exists, can't recreate it."
+if [ -d /vmfs/volumes/"$DATASTORE"/"$NAME" ]; then
+	echo "Directory - /vmfs/volumes/$DATASTORE/${NAME} already exists, can't recreate it."
 	exit
 fi
 
@@ -152,7 +156,7 @@ pciBridge7.functions = "8"
 ethernet0.pciSlotNumber = "32"
 ethernet0.present = "TRUE"
 ethernet0.virtualDev = "e1000"
-ethernet0.networkName = "Isolated VM Network"
+ethernet0.networkName = "${NETWORK}"
 ethernet0.generatedAddressOffset = "0"
 guestOS = "ubuntu-64"
 toolScripts.afterPowerOn = "TRUE"
@@ -180,5 +184,6 @@ if [ -n "$ISO" ]; then
 else
 	echo "No ISO added."
 fi
+echo "NETWORK: ${NETWORK}"
 echo "Thank you."
 exit
