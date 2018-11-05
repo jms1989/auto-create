@@ -7,13 +7,13 @@ phelp() {
 	echo "Script for automatic Virtual Machine creation for ESX"
 	echo "Usage: ./create.sh options: n <|c|i|r|s>"
 	echo "Where n: Name of VM (required), c: Number of virtual CPUs, i: location of an ISO image, r: RAM size in MB, s: Disk size in GB"
-	echo "Default values are: CPU: 2, RAM: 4096MB, HDD-SIZE: 20GB"
+	echo "Default values are: CPU: 2, RAM: 1024MB, HDD-SIZE: 10GB"
 }
 
 #Setting up some of the default variables
 CPU=2
-RAM=4096
-SIZE=20
+RAM=1024
+SIZE=10
 ISO=""
 FLAG=true
 ERR=false
@@ -112,7 +112,7 @@ touch $NAME/$NAME.vmx
 cat << EOF > $NAME/$NAME.vmx
 
 config.version = "8"
-virtualHW.version = "7"
+virtualHW.version = "13"
 vmci0.present = "TRUE"
 displayName = "${NAME}"
 floppy0.present = "FALSE"
@@ -143,9 +143,14 @@ pciBridge7.functions = "8"
 ethernet0.pciSlotNumber = "32"
 ethernet0.present = "TRUE"
 ethernet0.virtualDev = "e1000"
-ethernet0.networkName = "Inside"
+ethernet0.networkName = "Isolated VM Network"
 ethernet0.generatedAddressOffset = "0"
-guestOS = "other26xlinux-64"
+guestOS = "ubuntu-64"
+toolScripts.afterPowerOn = "TRUE"
+toolScripts.afterResume = "TRUE"
+toolScripts.beforeSuspend = "TRUE"
+toolScripts.beforePowerOff = "TRUE"
+tools.syncTime = "FALSE"
 EOF
 
 #Adding Virtual Machine to VM register - modify your path accordingly!!
