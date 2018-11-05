@@ -1,13 +1,13 @@
 #!/bin/sh
 
-#paratmers: machine name (required), CPU (number of cores), RAM (memory size in MB), HDD Disk size (in GB), ISO (Location of ISO image, optional)
-#default params: CPU: 2, RAM: 4096, DISKSIZE: 20GB, ISO: 'blank'
+#parameters: machine name (required), CPU (number of cores), RAM (memory size in MB), HDD Disk size (in GB), ISO (Location of ISO image, optional), DATASTORE (Name of datastore name)
+#default params: CPU: 2, RAM: 4096, DISKSIZE: 20GB, ISO: 'predefined iso', DATASTORE: datastore
 
 phelp() {
 	echo "Script for automatic Virtual Machine creation for ESX"
-	echo "Usage: ./create.sh options: n <|c|i|r|s>"
-	echo "Where n: Name of VM (required), c: Number of virtual CPUs, i: location of an ISO image, r: RAM size in MB, s: Disk size in GB"
-	echo "Default values are: CPU: 2, RAM: 1024MB, HDD-SIZE: 10GB"
+	echo "Usage: ./create.sh options: n <|c|i|r|s|d>"
+	echo "Where n: Name of VM (required), c: Number of virtual CPUs, i: location of an ISO image, r: RAM size in MB, s: Disk size in GB, d: Datatore Name"
+	echo "Default values are: CPU: 2, RAM: 1024MB, HDD-SIZE: 10GB, DATASTORE: datastore"
 }
 
 #Setting up some of the default variables
@@ -25,7 +25,7 @@ ERR=false
 #You need to assign more than 1 MB of ram, and of course RAM has to be an integer as well
 #The HDD-size has to be an integer and has to be greater than 0.
 #If the ISO parameter is added, we are checking for an actual .iso extension
-while getopts n:c:i:r:s: option
+while getopts n:c:i:r:s:d: option
 do
         case $option in
                 n)
@@ -79,6 +79,9 @@ do
 						MSG="$MSG | The HDD size has to be an integer."
 					fi
 					;;
+                d)
+					DATASTORE=${OPTARG};
+					;;
 				\?) echo "Unknown option: -$OPTARG" >&2; phelp; exit 1;;
         		:) echo "Missing option argument for -$OPTARG" >&2; phelp; exit 1;;
         		*) echo "Unimplimented option: -$OPTARG" >&2; phelp; exit 1;;
@@ -100,17 +103,22 @@ if [ -d "$NAME" ]; then
 	exit
 fi
 
+if [ ! -d /vmfs/volumes/"$DATASTORE" ]; then
+	echo "Datastore doesn't exist. Please check your default variable or specified -d parameter."
+	exit
+fi
+
 #Creating the folder for the Virtual Machine
-mkdir ${NAME}
+mkdir /vmfs/volumes/${DATASTORE}/${NAME}
 
 #Creating the actual Virtual Disk file (the HDD) with vmkfstools
-vmkfstools -c "${SIZE}"G -a lsilogic $NAME/$NAME.vmdk
+vmkfstools -c "${SIZE}"G -a lsilogic /vmfs/volumes/${DATASTORE}/$NAME/$NAME.vmdk
 
 #Creating the config file
-touch $NAME/$NAME.vmx
+touch /vmfs/volumes/${DATASTORE}/$NAME/$NAME.vmx
 
 #writing information into the configuration file
-cat << EOF > $NAME/$NAME.vmx
+cat << EOF > /vmfs/volumes/${DATASTORE}/$NAME/$NAME.vmx
 
 config.version = "8"
 virtualHW.version = "13"
@@ -159,7 +167,10 @@ MYVM=`vim-cmd solo/registervm /vmfs/volumes/${DATASTORE}/${NAME}/${NAME}.vmx`
 #Powering up virtual machine:
 vim-cmd vmsvc/power.on $MYVM
 
-echo "The Virtual Machine is now setup & the VM has been started up. Your have the following configuration:"
+VMID=`vim-cmd vmsvc/getallvms | grep ${NAME} | awk '{print $1}'`
+
+echo "The Virtual Machine is now setup & the VM has been started up. You have the following configuration:"
+echo "VMID: ${VMID}"
 echo "Name: ${NAME}"
 echo "CPU: ${CPU}"
 echo "RAM: ${RAM}"
