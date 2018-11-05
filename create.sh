@@ -14,7 +14,8 @@ phelp() {
 CPU=2
 RAM=1024
 SIZE=10
-ISO=""
+ISO="/vmfs/volumes/datastore3/.iso/ubuntu-18.04-netboot-amd64-unattended.iso"
+DATASTORE=datastore
 FLAG=true
 ERR=false
 
@@ -154,7 +155,7 @@ tools.syncTime = "FALSE"
 EOF
 
 #Adding Virtual Machine to VM register - modify your path accordingly!!
-MYVM=`vim-cmd solo/registervm /vmfs/volumes/datastore1/${NAME}/${NAME}.vmx`
+MYVM=`vim-cmd solo/registervm /vmfs/volumes/${DATASTORE}/${NAME}/${NAME}.vmx`
 #Powering up virtual machine:
 vim-cmd vmsvc/power.on $MYVM
 
