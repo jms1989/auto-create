@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #parameters: machine name (required), CPU (number of cores), RAM (memory size in MB), HDD Disk size (in GB), ISO (Location of ISO image, optional), DATASTORE (Name of datastore name), NETWORK (Name of Network)
-#default params: CPU: 2, RAM: 4096, DISKSIZE: 20GB, ISO: 'predefined iso', DATASTORE: datastore, NETWORK: VM Network
+#default params: CPU: 2, RAM: 1024, DISKSIZE: 10GB, ISO: 'predefined iso', DATASTORE: datastore, NETWORK: VM Network
 
 phelp() {
 	echo "Script for automatic Virtual Machine creation for ESX"
